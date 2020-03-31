@@ -1,0 +1,574 @@
+name: "DetectUnet"
+layer {
+  name: "data"
+  type: "Input"
+  top: "noisy"
+  input_param {
+    shape: { dim: 1 dim: 3 dim:512 dim: 512 }
+  }
+  include: { phase: TEST }
+}
+###################################
+layer {
+  name: "slicer_noisy"
+  type: "Slice"
+  bottom: "noisy"
+  ## Example of label with a shape N x 3 x 1 x 1
+  top: "sl_noisy1"
+  top: "sl_noisy2"
+  top: "sl_noisy3"
+  slice_param {
+    axis: 1
+    #slice_point: 1
+    #slice_point: 2
+  }
+}
+layer {
+    name: "rgb2y"
+    type: "Eltwise"
+    bottom: "sl_noisy1"
+    bottom: "sl_noisy2"
+    bottom: "sl_noisy3"
+    top: "noisy_y"
+    eltwise_param {
+        operation: SUM
+	coeff: 0.257
+	coeff: 0.504
+	coeff: 0.098
+    }
+}
+layer {
+    name: "xsobel"
+    type: "Convolution"
+    bottom: "noisy_y"
+    top: "xsobel_y"
+    param { lr_mult: 0 decay_mult: 0 }
+    param { lr_mult:0 decay_mult: 0 }
+    convolution_param {
+      num_output: 1     
+      kernel_size: 3    
+      stride: 1         
+      pad: 1
+      weight_filler {
+        type: "xavier" 
+        std: 0.1        
+      }
+      bias_filler {
+        type: "constant" 
+        value: 0
+      }
+    }
+}
+layer {
+    name: "ysobel"
+    type: "Convolution"
+    bottom: "noisy_y"
+    top: "ysobel_y"
+    param { lr_mult: 0 decay_mult: 0 }
+    param { lr_mult:0 decay_mult: 0 }
+    convolution_param {
+      num_output: 1     
+      kernel_size: 3    
+      stride: 1         
+      pad: 1
+      weight_filler {
+        type: "xavier" 
+        std: 0.1        
+      }
+      bias_filler {
+        type: "constant" 
+        value: 0
+      }
+    }
+}
+layer {
+    name: "lap4"
+    type: "Convolution"
+    bottom: "noisy_y"
+    top: "lap4_y"
+    param { lr_mult: 0 decay_mult: 0 }
+    param { lr_mult:0 decay_mult: 0 }
+    convolution_param {
+      num_output: 1     
+      kernel_size: 3    
+      stride: 1         
+      pad: 1
+      weight_filler {
+        type: "xavier" 
+        std: 0.1        
+      }
+      bias_filler {
+        type: "constant" 
+        value: 0
+      }
+    }
+}
+layer {
+    name: "lap8"
+    type: "Convolution"
+    bottom: "noisy_y"
+    top: "lap8_y"
+    param { lr_mult: 0 decay_mult: 0 }
+    param { lr_mult:0 decay_mult: 0 }
+    convolution_param {
+      num_output: 1     
+      kernel_size: 3    
+      stride: 1         
+      pad: 1
+      weight_filler {
+        type: "xavier" 
+        std: 0.1        
+      }
+      bias_filler {
+        type: "constant" 
+        value: 0
+      }
+    }
+}
+layer {
+  name: "concat_input"
+  bottom: "noisy"
+  bottom: "noisy_y"
+  bottom: "xsobel_y"
+  bottom: "ysobel_y"
+  bottom: "lap4_y"
+  bottom: "lap8_y"
+  top: "concat_input"
+  type: "Concat"
+  concat_param {
+    axis: 1
+  }
+}
+#1st_layer#########################
+layer {
+  name: "conv1_1"
+  type: "Convolution"
+  bottom:"concat_input"
+  top: "conv1_1"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu1_1"
+  type: "ReLU"
+  bottom: "conv1_1"
+  top: "relu1_1"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+##########################
+layer {
+  name: "conv1_2"
+  type: "Convolution"
+  bottom:"relu1_1"
+  top: "conv1_2"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu1_2"
+  type: "ReLU"
+  bottom: "conv1_2"
+  top: "relu1_2"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+#max_pool1###########################
+layer {
+  name: "pool_12"
+  type: "Pooling"
+  bottom: "relu1_2"
+  top: "pool_12"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2 # pool over a 2x2 region
+    stride: 2      # step two pixels (in the bottom blob) between pooling regions
+  }
+}
+#2nd_layer###########################
+layer {
+  name: "conv2_1"
+  type: "Convolution"
+  bottom: "pool_12"
+  top: "conv2_1"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+} 
+## LeakyReLU
+layer{
+  name: "relu2_1"
+  type: "ReLU"
+  bottom: "conv2_1"
+  top: "relu2_1"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+############################
+layer {
+  name: "conv2_2"
+  type: "Convolution"
+  bottom: "relu2_1"
+  top: "conv2_2"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+} 
+## LeakyReLU
+layer{
+  name: "relu2_2"
+  type: "ReLU"
+  bottom: "conv2_2"
+  top: "relu2_2"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+#max_pool2###########################
+layer {
+  name: "pool_23"
+  type: "Pooling"
+  bottom: "relu2_2"
+  top: "pool_23"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2 # pool over a 2x2 region
+    stride: 2      # step two pixels (in the bottom blob) between pooling regions
+  }
+}
+#3rd_layer###########################
+layer {
+  name: "conv3_1"
+  type: "Convolution"
+  bottom: "pool_23"
+  top: "conv3_1"
+  convolution_param {
+    num_output: 256
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu3_1"
+  type: "ReLU"
+  bottom: "conv3_1"
+  top: "relu3_1"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+############################
+layer {
+  name: "conv3_2"
+  type: "Convolution"
+  bottom: "relu3_1"
+  top: "conv3_2"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu3_2"
+  type: "ReLU"
+  bottom: "conv3_2"
+  top: "relu3_2"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+#up_conv1###########################
+layer {
+  name: "deconv_32"
+  type: "Deconvolution"
+  bottom: "relu3_2"
+  top: "deconv_32"
+  param {
+    lr_mult: 1
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output:128
+    pad: 1 # is right?
+    stride: 2 # is right?
+    kernel_size: 4 # is right?
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}  
+#concat_23######################
+layer{
+  name: "concat_23"
+  bottom: "deconv_32"
+  bottom: "relu2_2"
+  top: "concat_23"
+  type: "Concat"
+  concat_param{
+   axis: 1
+  }
+}
+#4rd_layer###########################
+layer {
+  name: "conv4_1"
+  type: "Convolution"
+  bottom: "concat_23"
+  top: "conv4_1"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu4_1"
+  type: "ReLU"
+  bottom: "conv4_1"
+  top: "relu4_1"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+############################
+layer {
+  name: "conv4_2"
+  type: "Convolution"
+  bottom: "relu4_1"
+  top: "conv4_2"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu4_2"
+  type: "ReLU"
+  bottom: "conv4_2"
+  top: "relu4_2"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+#up_conv34###########################
+layer {
+  name: "deconv_34"
+  type: "Deconvolution"
+  bottom: "relu4_2"
+  top: "deconv_34"
+  param {
+    lr_mult: 1
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 1 # is right?
+    stride: 2 # is right?
+    kernel_size: 4 # is right?
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+} 
+#concat_14######################
+layer{
+  name: "concat_14"
+  bottom: "deconv_34"
+  bottom: "relu1_2"
+  top: "concat_14"
+  type: "Concat"
+  concat_param{
+   axis: 1
+  }
+}
+#5rd_layer###########################
+layer {
+  name: "conv5_1"
+  type: "Convolution"
+  bottom: "concat_14"
+  top: "conv5_1"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu5_1"
+  type: "ReLU"
+  bottom: "conv5_1"
+  top: "relu5_1"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+############################
+layer {
+  name: "conv5_2"
+  type: "Convolution"
+  bottom: "relu5_1"
+  top: "conv5_2"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+## LeakyReLU
+layer{
+  name: "relu5_2"
+  type: "ReLU"
+  bottom: "conv5_2"
+  top: "relu5_2"
+  relu_param{
+	negative_slope: 0.1
+  }
+}
+############################
+layer {
+  name: "conv5_3"
+  type: "Convolution"
+  bottom: "relu5_2"
+  top: "output"
+  convolution_param {
+    num_output: 1
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type: "xavier"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
