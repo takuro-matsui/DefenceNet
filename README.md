@@ -97,7 +97,7 @@ Run `demo_defence.m`
 
 ## Dataset
 ### DetectNet
-To train U-Net, we collect 545 real-world fence images and binary masks created by Du et al. [8]. From
+To train U-Net, we collect 545 real-world fence images and binary masks created by Du et al. [8](https://github.com/chen-du/De-fencing/tree/master/dataset). From
 these images, we cropped 128 × 128 × 3 patches. In order to increase the amount of data for training improvement, the cropped patches are randomly flipped, rotated, zoomed and brightened.
 
 ### RemoveNet
