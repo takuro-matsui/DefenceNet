@@ -101,7 +101,7 @@ To train U-Net, we collect 545 real-world fence images and binary masks created 
 
 
 ### RemoveNet
-Fence images are created by combining fence masks with the clean outdoor images from UCID dataset and from the BSD dataset. Training dataset was created by running fllowing: 
+Fence images are created by combining fence masks with the clean outdoor images from UCID dataset and from the BSD dataset int the directry `dataset/train/`. Training dataset was created by running as following: 
 ```
 [fence_image, fence_mask] = add_fence(img, theta, scale, color_num, noise, real).
 ```
