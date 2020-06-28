@@ -67,6 +67,7 @@ prototxt_file_remove = './validation/eval_RemoveResNet3.prototxt';
 weight_h5_remove = './weight/RemoveResNet3_0719synthe_iter_50000.caffemodel.h5';
 net_remove = caffe.Net(prototxt_file_remove, weight_h5_remove, 'test');
 estimated_img = apply_gauss_fence(J, estimated_mask, 11, 'gauss', false);
+defenced_img = patch_processing(net_remove, {estimated_img, estimated_mask}, patch_size, floor(patch_size*0.85), 0.2);
 
 %% Show results
 color_mat = cat(3,0.99*ones(size(J,1),size(J,2)), 0.49*ones(size(J,1),size(J,2)), 0*ones(size(J,1),size(J,2)));
